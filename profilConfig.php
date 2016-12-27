@@ -7,16 +7,20 @@ if(isset($_FILES['p12'])){
 	
 	$p12_type = $_FILES['p12']['type'];
 	
-	$p12_tmp = $_FILES['p12']['tmp_name'];
+	$p12_tmp  = $_FILES['p12']['tmp_name'];
  	
- 	$p12_ext = pathinfo($p12_name,PATHINFO_EXTENSION);
+ 	$p12_ext  = pathinfo($p12_name,PATHINFO_EXTENSION);
 
  	$uploadOk = 1;
+ 	$cek = "./p12/".$p12_name;
+ 	
+ 	if(file_exists($cek)){
+ 		$uploadOk =0;
+ 	}
 
- 	// Check if file already exists	
  	if(($p12_ext == "p12") && $uploadOk === 1) {
- 		move_uploaded_file($p12_tmp, ("./uploads/".$p12_name));
- 		$_SESSION['valid'] = 'File berhasil diupload '.$p12_name;
+ 		move_uploaded_file($p12_tmp, ("./p12/".$p12_name));
+ 		$_SESSION['valid'] = 'File berhasil diupload '.$uploadOk;
  		$_SESSION['idx'] += 1;
  	}
  	else {

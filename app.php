@@ -1,7 +1,6 @@
 <?php 
 if (! $_POST) {echo "400 Bad Request"; die();} session_start();
 if(isset($_FILES['document'])){
-	
 	$file_name = $_FILES['document']['name'];
 	
 	$file_size = $_FILES['document']['size'];
