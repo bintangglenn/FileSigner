@@ -7,11 +7,9 @@ if(isset($_FILES['document'])){
 
 	$p12Content = file_get_contents("./p12/cert.p12");
 
-	$p12_name = $p12Content['name'];
-	
-	$p12_type = $p12Content['type'];
-
-	openssl_pkcs12_read($p12Content, $certs, $_POST['p12Password']);
+	if(openssl_pkcs12_read($p12Content, $certs, $_POST['passwordP12'])){
+		$p12_type = "test";
+	}
 
 	if($file_size > 1000000) {
 		$file_size = round($file_size / 1048576, 2) . " MB";
