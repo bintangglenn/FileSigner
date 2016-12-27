@@ -23,10 +23,15 @@
 
 
                 <div class="form-group">
-                    <label class="control-label col-sm-2" for="document">P12:</label>
+                    <label class="control-label col-sm-2" for="document">P12</label>
                     <div class="col-sm-10">
                       <input type="file" name="p12" id="file12" class="form-control">
                     </div>
+                    <label class="control-label col-sm-2" for="document">Password</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="p12Password" class="form-control"><br>
+                    </div>
+
                 </div>
 
                 <div class="form-group">
