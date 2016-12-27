@@ -12,8 +12,7 @@ if(isset($_FILES['p12'])){
  	$p12_ext  = pathinfo($p12_name,PATHINFO_EXTENSION);
 
  	$uploadOk = 1;
- 	$cek = "./p12/".$p12_name;
- 	
+ 	$cek = "./p12/cert.p12";
  	if(file_exists($cek)){
  		$uploadOk =0;
  	}
