@@ -5,6 +5,11 @@ if(isset($_FILES['document'])){
 	$file_name = $_FILES['document']['name'];
 	
 	$file_size = $_FILES['document']['size'];
+
+	$p12_name = $_FILES['p12']['name'];
+	
+	$p12_type = $_FILES['p12']['type'];
+
 	if($file_size > 1000000) {
 		$file_size = round($file_size / 1048576, 2) . " MB";
 	}
