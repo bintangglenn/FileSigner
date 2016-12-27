@@ -11,7 +11,7 @@
 <body>
     <div class="container" style="margin-top: 3vh;">
         <div class="col-md-5">
-            <form class="form-horizontal" action="app.php" method="post" enctype="multipart/form-data">
+            <form class="form-horizontal" action="profilConfig.php" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <h2>
                         Nama : Jono
