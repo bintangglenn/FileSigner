@@ -19,6 +19,12 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="control-label col-sm-2" for="document">File P12:</label>
+                    <div class="col-sm-10">
+                      <input type="file" name="p12" id="document" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
                         <input type="submit" value="Upload" name="submit" class="btn btn-default">
                     </div>
