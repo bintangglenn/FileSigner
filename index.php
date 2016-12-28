@@ -55,8 +55,8 @@
                 <tbody>
                     <?php
                         if(isset($_SESSION['dataUpload'])) {
-                            for($i = 0; $i < count($_SESSION['dataUpload']); $i++) {
-                                echo $_SESSION['dataUpload'][$i];
+                            foreach($_SESSION['dataUpload'] as $fileInfo) {
+                                echo $fileInfo;
                             }  
                         }
                     ?>

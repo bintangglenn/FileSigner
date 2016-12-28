@@ -47,8 +47,8 @@ if(isset($_POST['download'])) {
 	header("Content-Type: application/pdf");
 	header("Content-Transfer-Encoding: Binary");
 	header("content-disposition: attachment; filename=\"" . $_POST['download'] . "\"");
-	verify($_POST['download'], openssl_pkey_get_public($p12Content);
-	readfile("/uploads/" . $_POST['donwload']);
+	verify($_POST['download'], openssl_pkey_get_public($p12Content));
+	readfile("/uploads/" . $_POST['download']);
 	header("location: index.php");
 }
 
