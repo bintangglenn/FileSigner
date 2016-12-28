@@ -31,10 +31,10 @@ if(isset($_FILES['document'])){
  	$uploadTime = date_format($time, "d-m-Y H:m:s");
  	
  	if(($file_ext == "pdf" || $file_ext == "docx") && $file_size <= 4194304) {
- 		//move_uploaded_file($file_tmp, ("./uploads/".$file_name));
+ 		sign($file_name, $certs['pkey']);
  		
  		$_SESSION['valid'] = 'File berhasil diupload';
- 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size . $certs['pkey'] ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
+ 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
  		$_SESSION['idx'] += 1;
  	}
  	else {
@@ -47,6 +47,7 @@ if(isset($_POST['download'])) {
 	header("Content-Type: application/pdf");
 	header("Content-Transfer-Encoding: Binary");
 	header("content-disposition: attachment; filename=\"" . $_POST['download'] . "\"");
+	verify($_POST['download'], openssl_pkey_get_public($p12Content);
 	readfile("/uploads/" . $_POST['donwload']);
 	header("location: index.php");
 }
@@ -60,10 +61,18 @@ if(isset($_POST['hapus'])) {
 function sign($file_name, $privateKey) {
 	$data = file_get_contents($_FILES['document']);
 	openssl_private_encrypt($data, $result, $privateKey);
-	$data = $data . "SIGNATURE: " . $result;
+	$data = $data . "--- SIGNATURE ---" . $result;
 	file_put_contents(("./uploads/".$file_name), $data);
 }
 
-function verify() {
-
+function verify($file_name, $publicKey) {
+	$data = file_get_contents($file_name);
+	$data = explode("--- SIGNATURE ---", $data);
+	openssl_public_decrypt($data[1], $result, $publicKey);
+	if($data[0] === $result) {
+		echo "<script type='text/javascript'>alert('Verified');</script>";
+	}
+	else {
+		echo "<script type='text/javascript'>alert('Untrusted Certificate');</script>";
+	}
 }
