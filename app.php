@@ -5,11 +5,13 @@ if(isset($_FILES['document'])){
 	
 	$file_size = $_FILES['document']['size'];
 
-	$p12_name = $_FILES['p12']['name'];
-	
-	$p12_type = $_FILES['p12']['type'];
+	$p12Content = file_get_contents("./p12/cert.p12");
 
-	openssl_pkcs12_read($FILES['p12'], $certs, $_POST['p12Password']);
+	$p12_name = $p12Content['name'];
+	
+	$p12_type = $p12Content['type'];
+
+	openssl_pkcs12_read($p12Content, $certs, $_POST['p12Password']);
 
 	if($file_size > 1000000) {
 		$file_size = round($file_size / 1048576, 2) . " MB";
@@ -34,7 +36,7 @@ if(isset($_FILES['document'])){
  		//move_uploaded_file($file_tmp, ("./uploads/".$file_name));
  		
  		$_SESSION['valid'] = 'File berhasil diupload';
- 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size . $cert['pkey'] ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
+ 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size . $certs['pkey'] ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
  		$_SESSION['idx'] += 1;
  	}
  	else {
@@ -62,4 +64,8 @@ function sign($file_name, $privateKey) {
 	openssl_private_encrypt($data, $result, $privateKey);
 	$data = $data . "SIGNATURE: " . $result;
 	file_put_contents(("./uploads/".$file_name), $data);
+}
+
+function verify() {
+
 }
