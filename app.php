@@ -9,6 +9,8 @@ if(isset($_FILES['document'])){
 	
 	$p12_type = $_FILES['p12']['type'];
 
+	openssl_pkcs12_read($FILES['p12'], $certs, $_POST['p12Password']);
+
 	if($file_size > 1000000) {
 		$file_size = round($file_size / 1048576, 2) . " MB";
 	}
@@ -29,9 +31,10 @@ if(isset($_FILES['document'])){
  	$uploadTime = date_format($time, "d-m-Y H:m:s");
  	
  	if(($file_ext == "pdf" || $file_ext == "docx") && $file_size <= 4194304) {
- 		move_uploaded_file($file_tmp, ("./uploads/".$file_name));
+ 		//move_uploaded_file($file_tmp, ("./uploads/".$file_name));
+ 		
  		$_SESSION['valid'] = 'File berhasil diupload';
- 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size . "</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
+ 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size . $cert['pkey'] ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
  		$_SESSION['idx'] += 1;
  	}
  	else {
@@ -52,4 +55,11 @@ if(isset($_POST['hapus'])) {
 	unlink("./uploads/" . $_POST['hapus']);
 	unset($_SESSION['dataUpload'][$_POST['idxHapus']]);
 	header("location: index.php");
+}
+
+function sign($file_name, $privateKey) {
+	$data = file_get_contents($_FILES['document']);
+	openssl_private_encrypt($data, $result, $privateKey);
+	$data = $data . "SIGNATURE: " . $result;
+	file_put_contents(("./uploads/".$file_name), $data);
 }
