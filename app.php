@@ -36,32 +36,31 @@ if(isset($_FILES['file']) && isset($_FILES['cert'])) {
  	move_uploaded_file($cert_tmp, ("./tmp/" . $cert_name));
  	move_uploaded_file($file_tmp, ("./tmp/" . $file_name));
 
- 	if(!$multiple) {
-		if($cert_ext == "p12") {
-	 		exec('openssl pkcs12 -in ' . '"./tmp/' . $cert_name . '" -out ' . '"./tmp/' . substr($cert_name, 0, -4) . '.pem" -passin pass:' . $_POST['pass'] . ' -passout pass:' . $_POST['pass']);
-	 		unlink("./tmp/" . $cert_name);
-	 		$cert_name = substr($cert_name, 0, -4) . ".pem";
-	 	}
+	if($cert_ext == "p12") {
+ 		exec('openssl pkcs12 -in ' . '"./tmp/' . $cert_name . '" -out ' . '"./tmp/' . substr($cert_name, 0, -4) . '.pem" -passin pass:' . $_POST['pass'] . ' -passout pass:' . $_POST['pass']);
+ 		unlink("./tmp/" . $cert_name);
+ 		$cert_name = substr($cert_name, 0, -4) . ".pem";
+ 	}
 
-	 	if($_POST['submit'] == "sign") {
-	 		$out = shell_exec('openssl dgst -sha256 -sign "./tmp/' . $cert_name . '" -out "./signature/' . $file_name . '.sha256" -passin pass:' . $_POST['pass'] . ' "./tmp/' . $file_name . '" 2>&1');
-	 		var_dump($out);
-	 		if(empty($out)) {
-		 		$tmp = "key" . $_SESSION['idx'];
-		 		$_SESSION['dataUpload'][$tmp] = "<tr><td>" . $file_name . "</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . ".sha256\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Delete\" name=\"submit\"/></form></td><td>" . $file_size . "</td>";
-		 		$_SESSION['idx'] += 1;
-		 		$_SESSION['valid'] = 'Sign Success!';
-		 	} else {
-		 		$_SESSION['valid'] = 'There is an error while signing';
-		 	}
+ 	if($_POST['submit'] == "sign" && !$multiple) {
+ 		$out = shell_exec('openssl dgst -sha256 -sign "./tmp/' . $cert_name . '" -out "./signature/' . $file_name . '.sha256" -passin pass:' . $_POST['pass'] . ' "./tmp/' . $file_name . '" 2>&1');
+ 		var_dump($out);
+ 		if(empty($out)) {
+	 		$tmp = "key" . $_SESSION['idx'];
+	 		$_SESSION['dataUpload'][$tmp] = "<tr><td>" . $file_name . "</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . ".sha256\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Delete\" name=\"submit\"/></form></td><td>" . $file_size . "</td>";
+	 		$_SESSION['idx'] += 1;
+	 		$_SESSION['valid'] = 'Sign Success!';
+	 	} else {
+	 		$_SESSION['valid'] = 'There is an error while signing';
 	 	}
-	 	else if($_POST['submit'] == "verify") {
-	 		exec('openssl x509 -in "./tmp/' . $cert_name . '" -pubkey -noout > "./tmp/' . $file_name . '.pub"');
-	 		$out = shell_exec('openssl dgst -sha256 -verify "./tmp/' . $file_name . '.pub" -signature "./signature/' . $file_name . '.sha256" "./tmp/' . $file_name . '"');
-	 		$_SESSION['valid'] = $out;
-	 	}
-	}
+ 	}
+ 	else if($_POST['submit'] == "verify") {
+ 		exec('openssl x509 -in "./tmp/' . $cert_name . '" -pubkey -noout > "./tmp/' . $file_name . '.pub"');
+ 		$out = shell_exec('openssl dgst -sha256 -verify "./tmp/' . $file_name . '.pub" -signature "./signature/' . $file_name . '.sha256" "./tmp/' . $file_name . '"');
+ 		$_SESSION['valid'] = $out;
+ 	}
 
+	unlink("./tmp/" . $file_name . ".pub");
  	unlink("./tmp/" . $cert_name);
  	unlink("./tmp/" . $file_name);
  	header("location: index.php");
