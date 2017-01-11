@@ -1,16 +1,10 @@
 <?php 
 if (! $_POST) {echo "400 Bad Request"; die();} session_start();
-if(isset($_FILES['document'])){
-	$file_name = $_FILES['document']['name'];
+if(isset($_FILES['file']) && isset($_FILES['cert'])) {
+	$file_name = $_FILES['file']['name'];
+	$cert_name = $_FILES['cert']['name'];
 	
-	$file_size = $_FILES['document']['size'];
-
-	$p12Content = file_get_contents("./p12/cert.p12");
-
-	if(openssl_pkcs12_read($p12Content, $certs, $_POST['passwordP12'])){
-		$p12_type = "test";
-	}
-
+	$file_size = $_FILES['file']['size'];
 	if($file_size > 1000000) {
 		$file_size = round($file_size / 1048576, 2) . " MB";
 	}
@@ -21,58 +15,61 @@ if(isset($_FILES['document'])){
 		$file_size .= " B";
 	}
 	
-	$file_tmp = $_FILES['document']['tmp_name'];
+	$file_tmp = $_FILES['file']['tmp_name'];
+	$cert_tmp = $_FILES['cert']['tmp_name'];
  	
- 	$file_type = $_FILES['document']['type'];
- 	
- 	$file_ext = pathinfo($file_name,PATHINFO_EXTENSION);
+ 	$file_ext = pathinfo($file_name, PATHINFO_EXTENSION);
+ 	$cert_ext = pathinfo($cert_name, PATHINFO_EXTENSION);
 
  	$time = date_create(null, timezone_open("Asia/Jakarta"));
  	$uploadTime = date_format($time, "d-m-Y H:m:s");
- 	
- 	if(($file_ext == "pdf" || $file_ext == "docx") && $file_size <= 4194304) {
- 		sign($file_name, $certs['pkey']);
- 		
- 		$_SESSION['valid'] = 'File berhasil diupload';
- 		array_push($_SESSION['dataUpload'], "<tr><td>" . $file_name . "</td><td>" . $file_size ."</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Hapus\" name=\"submit\"/></form></td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . "\" name=\"download\"/><input type=\"submit\" value=\"Download\" name=\"submit\"/></form></td>");
- 		$_SESSION['idx'] += 1;
+
+ 	// Check if already signed
+ 	$multiple = false;
+ 	foreach ($_SESSION['dataUpload'] as $value) {
+ 		if(strpos($value, $file_name) !== false) {
+ 			$multiple = true;
+ 			$_SESSION['valid'] = 'There exists a file with same name';
+ 		}
  	}
- 	else {
- 		$_SESSION['valid'] = 'File gagal divalidasi, tidak bisa diupload';
- 	}
+
+ 	move_uploaded_file($cert_tmp, ("./tmp/" . $cert_name));
+ 	move_uploaded_file($file_tmp, ("./tmp/" . $file_name));
+
+ 	if(!$multiple) {
+		if($cert_ext == "p12") {
+	 		exec('openssl pkcs12 -in ' . '"./tmp/' . $cert_name . '" -out ' . '"./tmp/' . substr($cert_name, 0, -4) . '.pem" -passin pass:' . $_POST['pass'] . ' -passout pass:' . $_POST['pass']);
+	 		unlink("./tmp/" . $cert_name);
+	 		$cert_name = substr($cert_name, 0, -4) . ".pem";
+	 	}
+
+	 	if($_POST['submit'] == "sign") {
+	 		$out = shell_exec('openssl dgst -sha256 -sign "./tmp/' . $cert_name . '" -out "./signature/' . $file_name . '.sha256" -passin pass:' . $_POST['pass'] . ' "./tmp/' . $file_name . '" 2>&1');
+	 		var_dump($out);
+	 		if(empty($out)) {
+		 		$tmp = "key" . $_SESSION['idx'];
+		 		$_SESSION['dataUpload'][$tmp] = "<tr><td>" . $file_name . "</td><td>" . $uploadTime . "</td><td><form action=\"app.php\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" value=\"" . $file_name . ".sha256\" name=\"hapus\"/><input type=\"hidden\" value=\"" . $_SESSION['idx'] . "\" name=\"idxHapus\"/><input type=\"Submit\" value=\"Delete\" name=\"submit\"/></form></td><td>" . $file_size . "</td>";
+		 		$_SESSION['idx'] += 1;
+		 		$_SESSION['valid'] = 'Sign Success!';
+		 	} else {
+		 		$_SESSION['valid'] = 'There is an error while signing';
+		 	}
+	 	}
+	 	else if($_POST['submit'] == "verify") {
+	 		exec('openssl x509 -in "./tmp/' . $cert_name . '" -pubkey -noout > "./tmp/' . $file_name . '.pub"');
+	 		$out = shell_exec('openssl dgst -sha256 -verify "./tmp/' . $file_name . '.pub" -signature "./signature/' . $file_name . '.sha256" "./tmp/' . $file_name . '"');
+	 		$_SESSION['valid'] = $out;
+	 	}
+	}
+
+ 	unlink("./tmp/" . $cert_name);
+ 	unlink("./tmp/" . $file_name);
  	header("location: index.php");
 }
 
-if(isset($_POST['download'])) {
-	header("Content-Type: application/pdf");
-	header("Content-Transfer-Encoding: Binary");
-	header("content-disposition: attachment; filename=\"" . $_POST['download'] . "\"");
-	verify($_POST['download'], openssl_pkey_get_public($p12Content));
-	readfile("/uploads/" . $_POST['download']);
-	header("location: index.php");
-}
-
 if(isset($_POST['hapus'])) {
-	unlink("./uploads/" . $_POST['hapus']);
-	unset($_SESSION['dataUpload'][$_POST['idxHapus']]);
+	unlink("./signature/" . $_POST['hapus']);
+	$tmp = "key" . $_POST['idxHapus'];
+	unset($_SESSION['dataUpload'][$tmp]);
 	header("location: index.php");
-}
-
-function sign($file_name, $privateKey) {
-	$data = file_get_contents($_FILES['document']);
-	openssl_private_encrypt($data, $result, $privateKey);
-	$data = $data . "--- SIGNATURE ---" . $result;
-	file_put_contents(("./uploads/".$file_name), $data);
-}
-
-function verify($file_name, $publicKey) {
-	$data = file_get_contents($file_name);
-	$data = explode("--- SIGNATURE ---", $data);
-	openssl_public_decrypt($data[1], $result, $publicKey);
-	if($data[0] === $result) {
-		echo "<script type='text/javascript'>alert('Verified');</script>";
-	}
-	else {
-		echo "<script type='text/javascript'>alert('Untrusted Certificate');</script>";
-	}
 }
